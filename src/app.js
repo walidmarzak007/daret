@@ -45,7 +45,23 @@ function createParticipantField() {
   listItem.append(label, input, error, removeButton);
   participantsList.append(listItem);
 }
+function renumberParticipants() {
+  const items = participantsList.querySelectorAll("li");
 
+  items.forEach((item, index) => {
+    const number = index + 1;
+    const label = item.querySelector("label");
+    const input = item.querySelector("input");
+
+    label.textContent = `Participant ${number}`;
+    input.id = `participant-${number}`;
+    label.htmlFor = input.id;
+
+    const error = item.querySelector("p");
+    error.id = `${input.id}-erreur`;
+    input.setAttribute("aria-describedby", error.id);
+  });
+}
 function updateParticipantsInterface() {
   const count = participantsList.children.length;
 
@@ -83,8 +99,9 @@ participantsList.addEventListener("click", function (event) {
     return;
   }
 
-  removeButton.closest("li").remove();
-  updateParticipantsInterface();
+removeButton.closest("li").remove();
+renumberParticipants();
+updateParticipantsInterface();
 });
 
 for (let i = 0; i < 3; i++) {
@@ -100,6 +117,7 @@ const startDateInput = document.getElementById("date-debut");
 const daretForm = document.getElementById("daret-form");
 
 const circleNameRegex = /^[\p{L}\p{M}0-9 -]{3,40}$/u;
+const nameRegex = /^[\p{L}\p{M}'-]{2,30}$/u;
 function validateCircleName() {
   const name = circleNameInput.value.trim();
   const error = document.getElementById("nom-cercle-erreur");
