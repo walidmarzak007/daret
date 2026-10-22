@@ -1,37 +1,30 @@
 
 "use strict";
 
-// 1. Select the elements we need from the HTML
 const participantsList = document.getElementById("participants-liste");
 const addParticipantButton = document.getElementById("ajouter-participant");
 const participantsCounter = document.getElementById("participants-compteur");
 
-// 2. Read the minimum and maximum from the HTML data attributes
 const minParticipants = Number(participantsList.dataset.min);
 const maxParticipants = Number(participantsList.dataset.max);
 
-// 3. Create one participant field
 function createParticipantField() {
   const participantCount = participantsList.children.length;
 
-  // Create the elements
   const listItem = document.createElement("li");
   const label = document.createElement("label");
   const input = document.createElement("input");
   const removeButton = document.createElement("button");
   const error = document.createElement("p");
 
-  // Give each field a unique ID
   const participantNumber = participantCount + 1;
   const inputId = `participant-${participantNumber}`;
   const errorId = `${inputId}-erreur`;
 
-  // Configure the label
   label.htmlFor = inputId;
   label.className = "block font-medium";
   label.textContent = `Participant ${participantNumber}`;
 
-  // Configure the input
   input.type = "text";
   input.id = inputId;
   input.name = "participants";
@@ -40,23 +33,19 @@ function createParticipantField() {
     "mt-1 w-full rounded border border-daret-bordure px-3 py-2";
   input.setAttribute("aria-describedby", errorId);
 
-  // Configure the error message
   error.id = errorId;
   error.className = "mt-1 hidden text-sm font-medium text-daret-erreur";
 
-  // Configure the remove button
   removeButton.type = "button";
   removeButton.textContent = "Retirer";
   removeButton.dataset.action = "retirer-participant";
   removeButton.className =
     "mt-2 rounded border border-daret-bordure px-3 py-1";
 
-  // Assemble the elements
   listItem.append(label, input, error, removeButton);
   participantsList.append(listItem);
 }
 
-// 4. Update the participant counter and button states
 function updateParticipantsInterface() {
   const count = participantsList.children.length;
 
@@ -72,7 +61,6 @@ function updateParticipantsInterface() {
     });
 }
 
-// 5. Add a participant when the user clicks the add button
 addParticipantButton.addEventListener("click", function () {
   if (participantsList.children.length >= maxParticipants) {
     return;
@@ -82,7 +70,6 @@ addParticipantButton.addEventListener("click", function () {
   updateParticipantsInterface();
 });
 
-// 6. One delegated listener handles all remove buttons
 participantsList.addEventListener("click", function (event) {
   const removeButton = event.target.closest(
     '[data-action="retirer-participant"]'
@@ -100,7 +87,6 @@ participantsList.addEventListener("click", function (event) {
   updateParticipantsInterface();
 });
 
-// 7. Start with three participant fields
 for (let i = 0; i < 3; i++) {
   createParticipantField();
 }
@@ -141,82 +127,179 @@ function validateCircleName() {
 }
 
 circleNameInput.addEventListener("input", validateCircleName);
+
 function validateContribution() {
   const value = Number(contributionInput.value);
   const error = document.getElementById("cotisation-erreur");
 
-  if (contributionInput.value.trim() === "" || !Number.isFinite(value) || value <= 0) {
-    error.textContent = "La cotisation doit être un nombre supérieur à zéro.";
+  const isValid =
+    contributionInput.value.trim() !== "" &&
+    Number.isInteger(value) &&
+    value >= 100 &&
+    value <= 50000;
+
+  if (!isValid) {
+    error.textContent =
+      "La cotisation doit être un nombre entier entre 100 et 50 000 MAD.";
     error.classList.remove("hidden");
     contributionInput.setAttribute("aria-invalid", "true");
+    contributionInput.setAttribute(
+      "aria-describedby",
+      "cotisation-erreur"
+    );
     return false;
   }
 
   error.textContent = "";
   error.classList.add("hidden");
   contributionInput.removeAttribute("aria-invalid");
+  contributionInput.setAttribute(
+    "aria-describedby",
+    "cotisation-erreur"
+  );
+
   return true;
 }
+
 contributionInput.addEventListener("input", validateContribution);
+
 function validateStartDate() {
   const value = startDateInput.value;
   const error = document.getElementById("date-debut-erreur");
-
-  if (value === "") {
-    error.textContent = "Veuillez choisir une date de début.";
+ // Get today's date in YYYY-MM-DD format
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  const todayString = `${year}-${month}-${day}`;
+  if (value === "" || value < todayString) {
+    error.textContent =
+      "La date de début doit être aujourd'hui ou une date future.";
     error.classList.remove("hidden");
     startDateInput.setAttribute("aria-invalid", "true");
+    startDateInput.setAttribute(
+      "aria-describedby",
+      "date-debut-erreur"
+    );
+ return false;
+  }
+  error.textContent = "";
+  error.classList.add("hidden");
+  startDateInput.removeAttribute("aria-invalid");
+  startDateInput.setAttribute(
+    "aria-describedby",
+    "date-debut-erreur"
+  );
+
+  return true;
+}
+
+
+
+startDateInput.addEventListener("change", validateStartDate);
+
+function validateFrequency() {
+  const value = frequencyInput.value;
+  const error = document.getElementById("periodicite-erreur");
+
+  const allowedFrequencies = [
+    "hebdomadaire",
+    "quinzaine",
+    "mensuelle"
+  ];
+
+  if (!allowedFrequencies.includes(value)) {
+    error.textContent = "Veuillez choisir une fréquence valide.";
+    error.classList.remove("hidden");
+    frequencyInput.setAttribute("aria-invalid", "true");
+    frequencyInput.setAttribute(
+      "aria-describedby",
+      "periodicite-erreur"
+    );
     return false;
   }
 
   error.textContent = "";
   error.classList.add("hidden");
-  startDateInput.removeAttribute("aria-invalid");
+  frequencyInput.removeAttribute("aria-invalid");
+  frequencyInput.setAttribute(
+    "aria-describedby",
+    "periodicite-erreur"
+  );
+
   return true;
 }
 
-startDateInput.addEventListener("change", validateStartDate);
 function validateParticipants() {
   const inputs = participantsList.querySelectorAll(
     'input[name="participants"]'
   );
 
+  const nameRegex = /^[\p{L}\p{M}'-]{2,30}$/u;
+  const usedNames = new Set();
   let allValid = true;
 
   inputs.forEach((input) => {
     const name = input.value.trim();
+    const normalizedName = name.toLocaleLowerCase();
     const error = document.getElementById(`${input.id}-erreur`);
 
-    if (name === "") {
-      error.textContent = "Veuillez saisir le nom du participant.";
+    let message = "";
+
+    if (name.length < 2 || name.length > 30) {
+      message = "Le prénom doit contenir entre 2 et 30 caractères.";
+    } else if (!nameRegex.test(name)) {
+      message =
+        "Utilisez uniquement des lettres, accents, apostrophes ou tirets.";
+    } else if (usedNames.has(normalizedName)) {
+      message = "Chaque participant doit avoir un prénom différent.";
+    }
+
+    if (message !== "") {
+      error.textContent = message;
       error.classList.remove("hidden");
       input.setAttribute("aria-invalid", "true");
+      input.setAttribute("aria-describedby", error.id);
       allValid = false;
     } else {
       error.textContent = "";
       error.classList.add("hidden");
       input.removeAttribute("aria-invalid");
+      input.setAttribute("aria-describedby", error.id);
+      usedNames.add(normalizedName);
     }
   });
 
   return allValid;
 }
+
 daretForm.addEventListener("submit", function (event) {
   event.preventDefault();
 
   const isCircleNameValid = validateCircleName();
   const isContributionValid = validateContribution();
+  const isFrequencyValid = validateFrequency();
   const isStartDateValid = validateStartDate();
   const areParticipantsValid = validateParticipants();
-if (
-  !isCircleNameValid ||
-  !isContributionValid ||
-  !isStartDateValid ||
-  !areParticipantsValid
-) {
-  return;
-}
 
-  console.log("Formulaire valide !");
+  if (
+    !isCircleNameValid ||
+    !isContributionValid ||
+    !isFrequencyValid ||
+    !isStartDateValid ||
+    !areParticipantsValid
+  ) {
+    const firstInvalidField = daretForm.querySelector(
+      '[aria-invalid="true"]'
+    );
+
+    if (firstInvalidField) {
+      firstInvalidField.focus();
+    }
+
+    return;
+  }
+
 });
+
 
