@@ -115,9 +115,10 @@ const contributionInput = document.getElementById("cotisation");
 const frequencyInput = document.getElementById("periodicite");
 const startDateInput = document.getElementById("date-debut");
 const daretForm = document.getElementById("daret-form");
-
+const calendarBody = document.getElementById("calendrier-corps");
 const circleNameRegex = /^[\p{L}\p{M}0-9 -]{3,40}$/u;
 const nameRegex = /^[\p{L}\p{M}'-]{2,30}$/u;
+
 function validateCircleName() {
   const name = circleNameInput.value.trim();
   const error = document.getElementById("nom-cercle-erreur");
@@ -338,6 +339,62 @@ function formatFrenchDate(date) {
 }
 
 
+function createCalendarRow(turnNumber, participantName, date, contribution) {
+  const row = document.createElement("tr");
+
+  const turnCell = document.createElement("td");
+  const dateCell = document.createElement("td");
+  const beneficiaryCell = document.createElement("td");
+  const amountCell = document.createElement("td");
+  const statusCell = document.createElement("td");
+
+  turnCell.textContent = turnNumber;
+  dateCell.textContent = formatFrenchDate(date);
+  beneficiaryCell.textContent = participantName;
+  amountCell.textContent =
+    `${(contribution * participantsList.children.length).toLocaleString("fr-FR")} MAD`;
+  statusCell.textContent = "En attente";
+
+  row.append(
+    turnCell,
+    dateCell,
+    beneficiaryCell,
+    amountCell,
+    statusCell
+  );
+
+  return row;
+}
+
+
+
+function generateCalendar(contribution, frequency, startDate) {
+  // Clear the previous calendar.
+  calendarBody.replaceChildren();
+
+  // Find all participant inputs.
+  const participantInputs = participantsList.querySelectorAll(
+    'input[name="participants"]'
+  );
+
+  // Create one row for each participant.
+  participantInputs.forEach((input, index) => {
+    const participantName = input.value.trim();
+    const date = calculateTurnDate(startDate, index, frequency);
+
+    const row = createCalendarRow(
+      index + 1,
+      participantName,
+      date,
+      contribution
+    );
+
+    calendarBody.append(row);
+  });
+}
+
+
+
 daretForm.addEventListener("submit", function (event) {
   event.preventDefault();
 
@@ -396,6 +453,10 @@ daretForm.addEventListener("submit", function (event) {
 
   document.getElementById("resume-dates").textContent =
     `${formatFrenchDate(firstDate)} – ${formatFrenchDate(lastDate)}`;
+
+    
+
+    generateCalendar(contribution, frequency, startDate);
 
   // 4. Show the result and hide the empty state.
   document.getElementById("etat-vide").classList.add("hidden");
