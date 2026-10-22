@@ -291,6 +291,53 @@ function validateParticipants() {
   return allValid;
 }
 
+function calculateCircleSummary(contribution, participantCount) {
+  const amountReceived = contribution * participantCount;
+  const totalPaidPerParticipant = contribution * participantCount;
+  const numberOfTurns = participantCount;
+
+  return {
+    amountReceived,
+    totalPaidPerParticipant,
+    numberOfTurns
+  };
+}
+
+function calculateTurnDate(startDate, turnIndex, frequency) {
+  const [year, month, day] = startDate.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+
+  if (frequency === "hebdomadaire") {
+    date.setDate(date.getDate() + turnIndex * 7);
+  } else if (frequency === "quinzaine") {
+    date.setDate(date.getDate() + turnIndex * 14);
+  } else if (frequency === "mensuelle") {
+    // Keep the original day when possible.
+    // For example, January 31 becomes February 28 or 29.
+    date.setDate(1);
+    date.setMonth(date.getMonth() + turnIndex);
+
+    const lastDayOfMonth = new Date(
+      date.getFullYear(),
+      date.getMonth() + 1,
+      0
+    ).getDate();
+
+    date.setDate(Math.min(day, lastDayOfMonth));
+  }
+
+  return date;
+}
+
+function formatFrenchDate(date) {
+  return new Intl.DateTimeFormat("fr-FR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  }).format(date);
+}
+
+
 daretForm.addEventListener("submit", function (event) {
   event.preventDefault();
 
@@ -318,6 +365,42 @@ daretForm.addEventListener("submit", function (event) {
     return;
   }
 
+  // 1. Read the validated form values.
+  const contribution = Number(contributionInput.value);
+  const participantCount = participantsList.children.length;
+  const frequency = frequencyInput.value;
+  const startDate = startDateInput.value;
+
+  // 2. Calculate the summary.
+  const summary = calculateCircleSummary(
+    contribution,
+    participantCount
+  );
+
+  const firstDate = calculateTurnDate(startDate, 0, frequency);
+  const lastDate = calculateTurnDate(
+    startDate,
+    summary.numberOfTurns - 1,
+    frequency
+  );
+
+  // 3. Display the results in the existing HTML.
+  document.getElementById("resume-cagnotte").textContent =
+    `${summary.amountReceived.toLocaleString("fr-FR")} MAD`;
+
+  document.getElementById("resume-total-cycle").textContent =
+    `${summary.totalPaidPerParticipant.toLocaleString("fr-FR")} MAD`;
+
+  document.getElementById("resume-nb-tours").textContent =
+    summary.numberOfTurns;
+
+  document.getElementById("resume-dates").textContent =
+    `${formatFrenchDate(firstDate)} – ${formatFrenchDate(lastDate)}`;
+
+  // 4. Show the result and hide the empty state.
+  document.getElementById("etat-vide").classList.add("hidden");
+  document.getElementById("contenu-resultat").classList.remove("hidden");
 });
+
 
 
