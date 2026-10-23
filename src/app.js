@@ -116,6 +116,11 @@ const frequencyInput = document.getElementById("periodicite");
 const startDateInput = document.getElementById("date-debut");
 const daretForm = document.getElementById("daret-form");
 const calendarBody = document.getElementById("calendrier-corps");
+const shuffleButton = document.getElementById("tirage-au-sort");
+const restoreOrderButton = document.getElementById("ordre-saisie");
+let originalParticipantOrder = [];
+let currentParticipantOrder = [];
+let currentCalendarSettings = null;
 const circleNameRegex = /^[\p{L}\p{M}0-9 -]{3,40}$/u;
 const nameRegex = /^[\p{L}\p{M}'-]{2,30}$/u;
 
@@ -368,18 +373,12 @@ function createCalendarRow(turnNumber, participantName, date, contribution) {
 
 
 
-function generateCalendar(contribution, frequency, startDate) {
+function generateCalendar(contribution, frequency, startDate, participantNames) {
   // Clear the previous calendar.
   calendarBody.replaceChildren();
 
-  // Find all participant inputs.
-  const participantInputs = participantsList.querySelectorAll(
-    'input[name="participants"]'
-  );
-
-  // Create one row for each participant.
-  participantInputs.forEach((input, index) => {
-    const participantName = input.value.trim();
+  // Create one row for each participant in the chosen order.
+  participantNames.forEach((participantName, index) => {
     const date = calculateTurnDate(startDate, index, frequency);
 
     const row = createCalendarRow(
@@ -456,12 +455,79 @@ daretForm.addEventListener("submit", function (event) {
 
     
 
-    generateCalendar(contribution, frequency, startDate);
+    // Remember the original order entered in the form.
+originalParticipantOrder = Array.from(
+  participantsList.querySelectorAll('input[name="participants"]'),
+  (input) => input.value.trim()
+);
+
+// Start with the original order.
+currentParticipantOrder = [...originalParticipantOrder];
+
+// Remember the settings needed to rebuild the calendar.
+currentCalendarSettings = {
+  contribution,
+  frequency,
+  startDate
+};
+
+// Generate the calendar.
+generateCalendar(
+  contribution,
+  frequency,
+  startDate,
+  currentParticipantOrder
+);
 
   // 4. Show the result and hide the empty state.
   document.getElementById("etat-vide").classList.add("hidden");
   document.getElementById("contenu-resultat").classList.remove("hidden");
 });
+
+function shuffleParticipants() {
+  if (currentCalendarSettings === null) {
+    return;
+  }
+
+  currentParticipantOrder = [...originalParticipantOrder];
+
+  for (let i = currentParticipantOrder.length - 1; i > 0; i--) {
+    const randomIndex = Math.floor(Math.random() * (i + 1));
+
+    const temporary = currentParticipantOrder[i];
+    currentParticipantOrder[i] = currentParticipantOrder[randomIndex];
+    currentParticipantOrder[randomIndex] = temporary;
+  }
+
+  const { contribution, frequency, startDate } = currentCalendarSettings;
+
+  generateCalendar(
+    contribution,
+    frequency,
+    startDate,
+    currentParticipantOrder
+  );
+}
+
+function restoreParticipantOrder() {
+  if (currentCalendarSettings === null) {
+    return;
+  }
+
+  currentParticipantOrder = [...originalParticipantOrder];
+
+  const { contribution, frequency, startDate } = currentCalendarSettings;
+
+  generateCalendar(
+    contribution,
+    frequency,
+    startDate,
+    currentParticipantOrder
+  );
+}
+
+shuffleButton.addEventListener("click", shuffleParticipants);
+restoreOrderButton.addEventListener("click", restoreParticipantOrder);
 
 
 
